@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 if [ $# -lt 1 ]; then
     echo "Error: Directory path is required."
@@ -14,29 +14,23 @@ if [ ! -d "$DIR" ]; then
 fi
 
 if [ $# -eq 1 ]; then
-    set -- "$@" "tmp"
+    EXTENSIONS=("tmp")
+else
+    EXTENSIONS=("${@:2}")
 fi
 
-shift
+DELETED_COUNT=0
 
-COUNTER="/tmp/cleanup_$$.count"
-echo 0 > "$COUNTER"
-
-for ext in "$@"; do
-    ext=$(printf '%s' "$ext" | sed 's/^\.//')
-    
-    find "$DIR" -type f -name "*.$ext" 2>/dev/null | while IFS= read -r file; do
-        if rm -f "$file" 2>/dev/null; then
+for ext in "${EXTENSIONS[@]}"; do
+    ext="${ext#.}"
+    while IFS= read -r -d '' file; do
+        if rm -f "$file"; then
+            ((DELETED_COUNT++))
             echo "Deleted: $file"
-            count=$(cat "$COUNTER")
-            echo $((count + 1)) > "$COUNTER"
         else
             echo "Warning: failed to delete '$file'"
         fi
-    done
+    done < <(find "$DIR" -type f -name "*.$ext" -print0)
 done
 
-TOTAL=$(cat "$COUNTER")
-rm -f "$COUNTER"
-
-echo "Total files deleted: $TOTAL"
+echo "Total files deleted: $DELETED_COUNT"
