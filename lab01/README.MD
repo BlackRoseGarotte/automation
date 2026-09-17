@@ -8,12 +8,12 @@
 ## Script behavior scenarios
 
 ### Working scenarios
-`bash cleanup.sh /tmp`  
+`bash cleanup.sh /dir`  
 - Clear the tmp folder by default
 
 ![alt text](images/image.png)
 
-`bash cleanup.sh /tmp .tmp .log`  
+`bash cleanup.sh /dir .tmp .log`  
 - Choose the required extensions
 
 ![alt text](images/image-1.png)
