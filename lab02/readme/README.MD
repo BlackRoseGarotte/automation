@@ -131,7 +131,7 @@ python currency_exchange_rate.py RON UAH 2025-07-12
 ![pic](images/Screenshot_4.png)
 
 ```bash
-python currency_exchange_rate.py UAH RUS 2025-09-14
+python currency_exchange_rate.py UAH RUB 2025-09-14
 ```
 
 ![pic](images/Screenshot_5.png)
