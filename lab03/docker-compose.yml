@@ -1,0 +1,24 @@
+services:
+  web:
+    image: php:8.3-apache
+    container_name: php_apache_lab03
+    ports:
+      - "8080:80"
+    volumes:
+      - ./app:/var/www/html
+    env_file:
+      - .env
+    restart: unless-stopped
+
+  currency-cron:
+    build: .
+    container_name: currency-cron
+    restart: unless-stopped
+    depends_on:
+      - web
+    environment:
+      TZ: Europe/Chisinau
+      API_URL: http://web/
+      API_KEY: ${API_KEY:-EXAMPLE_API_KEY}
+    volumes:
+      - ./data:/app/data

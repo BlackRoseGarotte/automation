@@ -1,0 +1,7 @@
+2026-09-27 21:46:01,867 - ERROR - Error: Expecting value: line 1 column 1 (char 0)
+2026-09-27 21:46:16,117 - ERROR - Usage: currency_exchange_rate.py FROM TO YYYY-MM-DD
+2026-09-27 21:53:12,206 - ERROR - Error: The currency CNY is unknown2026-09-27 21:54:56,608 - ERROR - Error: The currency CNY is unknown
+2026-09-27 21:55:54,208 - ERROR - Error: HTTPConnectionPool(host='localhost', port=8080): Max retries exceeded with url: /?from=CNY&to=RUB&date=2025-09-14 (Caused by NewConnectionError("HTTPConnection(host='localhost', port=8080): Failed to establish a new connection: [WinError 10061] Подключение не установлено, т.к. конечный компьютер отверг запрос на подключение"))
+2026-09-30 13:36:48,689 - ERROR - Usage: currency_exchange_rate.py FROM TO YYYY-MM-DD
+2026-09-30 13:37:08,444 - ERROR - Error: The currency  is unknown
+2026-09-30 13:48:07,756 - ERROR - Error: Expecting value: line 1 column 1 (char 0)

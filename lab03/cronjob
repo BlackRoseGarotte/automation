@@ -1,0 +1,2 @@
+0 6 * * * root /usr/local/bin/python /app/currency_exchange_rate.py MDL EUR $(date -d yesterday +\%F) >> /var/log/cron.log 2>&1
+0 17 * * 5 root /usr/local/bin/python /app/currency_exchange_rate.py MDL USD $(date -d '7 days ago' +\%F) >> /var/log/cron.log 2>&1
