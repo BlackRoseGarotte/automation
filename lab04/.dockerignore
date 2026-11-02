@@ -1,0 +1,6 @@
+.git
+.github
+secrets
+.env
+db
+README.md

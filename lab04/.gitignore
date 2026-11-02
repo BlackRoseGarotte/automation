@@ -1,0 +1,6 @@
+db/
+.env
+secrets/
+*.sqlite
+*.sqlite3
+.vscode/

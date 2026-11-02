@@ -1,0 +1,45 @@
+pipeline {
+    agent {
+        label 'php-agent'
+    }
+
+    stages {
+        stage('Install Dependencies') {
+            steps {
+                dir('lab04') {
+                    echo 'Preparing PHP project...'
+
+                    sh 'php -v'
+                    sh 'php -m | grep -i sqlite'
+
+                    sh '''
+                        mkdir -p db
+                        rm -f db/db.sqlite
+                        sqlite3 db/db.sqlite < sql/schema.sql
+                    '''
+                }
+            }
+        }
+
+        stage('Test') {
+            steps {
+                dir('lab5') {
+                    echo 'Running PHP tests...'
+                    sh 'php tests/tests.php'
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            echo 'Pipeline completed.'
+        }
+        success {
+            echo 'All stages completed successfully!'
+        }
+        failure {
+            echo 'Errors detected in the pipeline.'
+        }
+    }
+}
