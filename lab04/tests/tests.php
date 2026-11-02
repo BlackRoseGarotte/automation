@@ -24,10 +24,19 @@ try {
         $db instanceof Database, 'Connected to SQLite', 'Could not connect'
     ));
 
-    $tests->add('Execute method', function () use ($db): bool {
-        $result = $db->Execute("CREATE TABLE audit (id INTEGER PRIMARY KEY, note TEXT)");
-        return assertExpression($result === 0, 'Execute works', 'Execute failed');
-    });
+$tests->add('Execute method', function () use ($db): bool {
+    $db->Execute("CREATE TABLE audit (id INTEGER PRIMARY KEY, note TEXT)");
+
+    $result = $db->Fetch(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='audit'"
+    );
+
+    return assertExpression(
+        count($result) === 1,
+        'Execute works',
+        'Execute failed'
+    );
+});
 
     $tests->add('Fetch method', function () use ($db): bool {
         $rows = $db->Fetch('SELECT title FROM page ORDER BY id');
