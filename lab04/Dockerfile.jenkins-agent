@@ -1,6 +1,10 @@
-FROM jenkins/ssh-agent:latest
+FROM jenkins/ssh-agent
 
 USER root
+
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends php-cli php-sqlite3 sqlite3 git && \
+    apt-get install -y \
+        php-cli \
+        php-sqlite3 \
+        sqlite3 && \
     rm -rf /var/lib/apt/lists/*
