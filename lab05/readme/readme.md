@@ -33,7 +33,7 @@ Two separate SSH key pairs were generated for connections between:
 
 A permanent agent named `ansible-agent` with the label `ansible` was created in Jenkins.
 
-![alt](images/jenkins_agents.png)
+![alt](images/ansible_agent_connection_success.png)
 
 ## 5. Steps for creating the Test Server
 
@@ -47,7 +47,7 @@ All four containers were started using:
 docker compose up -d --build
 ```
 
-![alt](images/docker_containers.png)
+![alt](images/containers_up.png)
 
 The Test Server exposes port `80`, mapped to port `8081` on the host machine.
 
@@ -69,7 +69,7 @@ The playbook was tested manually using:
 docker exec -u jenkins ansible-agent ansible-playbook -i /home/jenkins/ansible/hosts.ini /home/jenkins/ansible/setup_test_server.yml
 ```
 
-![alt](images/ansible_playbook.png)
+![alt](images/conf_testserver.png)
 
 The `deploy_php.yml` playbook was also created to copy application files, initialize the SQLite database, configure file permissions, and restart Apache.
 
@@ -88,9 +88,9 @@ All pipelines use the following Git repository configuration:
 
 The Pipeline clones the repository, installs dependencies using Composer, executes PHPUnit tests, and publishes test results using JUnit.
 
-![alt](images/php_build_and_test.png)
+![alt](images/php_pipeline_success.png)
 
-![alt](images/test_results.png)
+![alt](images/php_tests_success.png)
 
 ### Ansible Setup Pipeline
 
@@ -99,7 +99,7 @@ The Pipeline clones the repository, installs dependencies using Composer, execut
 
 The Pipeline clones the repository and executes the `setup_test_server.yml` playbook to configure the Test Server.
 
-![alt](images/ansible_setup.png)
+![alt](images/ansible_build_success.png)
 
 ### PHP Deployment Pipeline
 
@@ -110,11 +110,11 @@ The Pipeline clones the repository and executes the `deploy_php.yml` playbook.
 
 The deployment was completed successfully with no failed or unreachable hosts.
 
-![alt](images/php_deploy.png)
+![alt](images/php_deploy_success.png)
 
 The deployed application was tested in a web browser at `http://localhost:8081`. All three pages were displayed correctly using data stored in the SQLite database.
 
-![alt](images/application.png)
+![alt](images/test_site.png)
 
 ## 8. Control questions
 
