@@ -1,87 +1,137 @@
-# Jenkins CI/CD Automation
+# Jenkins CI/CD Automation with Ansible
 
 ## 1. Project description
 
-The project is a PHP web application that uses SQLite for data storage. It includes classes `Database` and `Page`, providing CRUD operations and HTML template rendering.
+The project extends Individual Work 04 by introducing automated server configuration and PHP application deployment using Ansible.
 
-The project contains 10 automated tests that verify the functionality of these classes. Jenkins is used to automate testing through a Pipeline running on a separate SSH agent.
+The PHP application uses SQLite for data storage and includes `Database` and `Page` classes. The existing automated tests were adapted to PHPUnit.
 
-![Project structure](images/lab4_tree.png)
+The infrastructure consists of four Docker containers: Jenkins Controller, SSH Agent, Ansible Agent, and Test Server.
 
 ## 2. Steps for setting up Jenkins Controller
 
-A `docker-compose.yml` file was created with the `jenkins-controller` service based on the `jenkins/jenkins:lts` image.
+A `compose.yaml` file was created with the `jenkins-controller` service based on the `jenkins/jenkins:lts` image.
 
-The container exposes ports `8080` and `50000`, uses the `jenkins_home` volume for persistent storage, and connects to the `jenkins-network` network.
+The controller exposes ports `8080` and `50000`, uses persistent volume storage, and connects to the `jenkins-network` network.
 
-The controller was started using:
+The initial administrator password was retrieved, the necessary Jenkins plugins were installed, and an administrator account was created.
 
-```bash
-docker compose up -d
-```
+## 3. Steps for setting up SSH Agent
 
-The initial administrator password was retrieved, the recommended plugins were installed, and an administrator account was created through the Jenkins web interface.
+The SSH Agent configuration from Individual Work 04 was reused and extended with Composer and additional PHP extensions.
 
-![Jenkins Dashboard](images/jenkins_dashboard.png)
+The existing SSH key pair was used for authentication. The private key was registered in Jenkins Credentials, and a permanent SSH agent was configured through the Jenkins web interface.
 
-## 3. Steps for setting up SSH agent
+## 4. Steps for creating and configuring Ansible Agent
 
-An SSH key pair was generated using `ssh-keygen`. The public key was added to the `.env` file as `JENKINS_AGENT_SSH_PUBKEY`.
+A `Dockerfile.ansible_agent` file based on Ubuntu 24.04 was created. Ansible, Python, Git, OpenSSH, sudo, and OpenJDK 21 were installed.
 
-A Dockerfile based on `jenkins/ssh-agent` was created with PHP CLI and SQLite support. The `ssh-agent` service was added to Docker Compose.
+Two separate SSH key pairs were generated for connections between:
 
-Both containers were started using:
+- Jenkins Controller and Ansible Agent.
+- Ansible Agent and Test Server.
+
+A permanent agent named `ansible-agent` with the label `ansible` was created in Jenkins.
+
+![alt](images/jenkins_agents.png)
+
+## 5. Steps for creating the Test Server
+
+A `Dockerfile.test_server` file based on Ubuntu 24.04 was created with OpenSSH Server, Python, and sudo.
+
+A dedicated `ansible` user was created with passwordless sudo privileges and SSH key authentication.
+
+All four containers were started using:
 
 ```bash
 docker compose up -d --build
 ```
 
-![Docker containers](images/agent_up.png)
+![alt](images/docker_containers.png)
 
-The private SSH key was registered in Jenkins Credentials. A permanent agent named `ssh-agent1` was created with the label `php-agent` and connected using SSH.
+The Test Server exposes port `80`, mapped to port `8081` on the host machine.
 
-The initial SSH host key verification problem was resolved by configuring the `Manually trusted key Verification Strategy`.
+## 6. Ansible playbook and its tasks
 
-![Connected SSH Agent](images/create_node.png)
+An `ansible` directory was created containing the `hosts.ini` inventory file and two playbooks.
 
-## 4. Steps for creating and configuring Jenkins pipeline
+The `setup_test_server.yml` playbook performs the following tasks:
 
-A `Jenkinsfile` was added to the PHP project in the GitHub repository.
+1. Updates the APT package cache.
+2. Installs Apache2, PHP, and the required extensions.
+3. Creates the application directory.
+4. Configures the Apache VirtualHost.
+5. Starts and restarts Apache.
 
-The Pipeline was configured with the following parameters:
+The playbook was tested manually using:
+
+```bash
+docker exec -u jenkins ansible-agent ansible-playbook -i /home/jenkins/ansible/hosts.ini /home/jenkins/ansible/setup_test_server.yml
+```
+
+![alt](images/ansible_playbook.png)
+
+The `deploy_php.yml` playbook was also created to copy application files, initialize the SQLite database, configure file permissions, and restart Apache.
+
+## 7. Steps for creating and configuring Jenkins pipelines
+
+Three Pipeline files were created in the `lab05/pipelines` directory.
+
+All pipelines use the following Git repository configuration:
 
 - **Repository:** `https://github.com/BlackRoseGarotte/automation.git`
 - **Branch:** `main`
-- **Script Path:** `lab04/Jenkinsfile`
-- **Agent label:** `php-agent`
 
-The Pipeline contains two main stages:
+### PHP Build and Test Pipeline
 
-1. **Install Dependencies** - verifies PHP and SQLite and prepares the database.
-2. **Test** - executes the PHP unit tests using `php tests/tests.php`.
+- **Script Path:** `lab05/pipelines/php_build_and_test_pipeline.groovy`
 
-![Pipeline configuration](images/item_conf_git_url.png)
+The Pipeline clones the repository, installs dependencies using Composer, executes PHPUnit tests, and publishes test results using JUnit.
 
-![Pipeline configuration](images/item_conf_branch_scriptpath.png)
+![alt](images/php_build_and_test.png)
 
-The Pipeline was configured to report successful or failed execution.
+![alt](images/test_results.png)
 
-![Pipeline execution results](images/pipeline_stages.png)
+### Ansible Setup Pipeline
 
-## 5. Control questions
+- **Script Path:** `lab05/pipelines/ansible_setup_pipeline.groovy`
+- **Agent label:** `ansible`
 
-**1. What are the advantages of using Jenkins for DevOps task automation?**
+The Pipeline clones the repository and executes the `setup_test_server.yml` playbook to configure the Test Server.
 
-Jenkins automates building, testing, and deployment, reduces manual work and human errors, integrates with Git repositories, supports plugins, and allows tasks to run on separate agents.
+![alt](images/ansible_setup.png)
 
-**2. What other types of Jenkins agents exist?**
+### PHP Deployment Pipeline
 
-Besides SSH agents, Jenkins supports inbound agents connected through its agent protocol, Docker-based agents, Kubernetes agents created dynamically as pods, and cloud-based agents such as AWS EC2 instances.
+- **Script Path:** `lab05/pipelines/php_deploy_pipeline.groovy`
+- **Agent label:** `ansible`
 
-**3. What problems did you encounter when setting up Jenkins and how did you solve them?**
+The Pipeline clones the repository and executes the `deploy_php.yml` playbook.
 
-The main problem was an SSH connection failure caused by an untrusted SSH host key. It was resolved by configuring the host key verification strategy in Jenkins.
+The deployment was completed successfully with no failed or unreachable hosts.
 
-Another issue involved incorrect character encoding in the SSH public key comment. The comment was replaced with ASCII text. The key itself remained valid, so this was not the cause of the connection failure.
+![alt](images/php_deploy.png)
 
-After configuring SSH trust, Jenkins successfully authenticated and connected to the agent.
+The deployed application was tested in a web browser at `http://localhost:8081`. All three pages were displayed correctly using data stored in the SQLite database.
+
+![alt](images/application.png)
+
+## 8. Control questions
+
+**1. What are the advantages of using Ansible for server configuration?**
+
+Ansible automates repetitive configuration tasks, reduces human errors, and ensures consistent server configurations. It uses readable YAML playbooks, supports idempotency, and does not require a dedicated agent on the managed server.
+
+**2. What other Ansible modules exist for configuration management?**
+
+- `user` — manages user accounts.
+- `group` — manages user groups.
+- `template` — generates configuration files from templates.
+- `lineinfile` — modifies individual lines in configuration files.
+- `package` — installs and removes software packages.
+- `cron` — manages scheduled tasks.
+- `systemd_service` — manages systemd services.
+
+**3. What problems did you encounter when creating the Ansible playbook and how did you solve them?**
+
+The initial problem was an inaccessible inventory file inside the Ansible Agent container. It was resolved by correcting the Docker volume configuration and filling in the missing inventory parameters. Another problem was SSH host key verification failure. It was resolved by adding the Test Server to the `known_hosts` file. After resolving these issues, the server configuration and application deployment were completed successfully.
