@@ -3,3 +3,8 @@ secrets/
 *.sqlite
 *.sqlite3
 .vscode/
+/vendor/
+/db/
+/reports/
+.phpunit.result.cache
+.phpunit.cache/
