@@ -1,0 +1,24 @@
+FROM ubuntu:24.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && \
+    apt-get install -y \
+        openssh-server \
+        openssh-client \
+        python3 \
+        ansible \
+        git \
+        sudo \
+        openjdk-25-jre-headless && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN useradd -m -s /bin/bash jenkins && \
+    mkdir -p /home/jenkins/.ssh /run/sshd && \
+    chown -R jenkins:jenkins /home/jenkins/.ssh && \
+    chmod 700 /home/jenkins/.ssh
+
+EXPOSE 22
+
+
+CMD ["sh", "-c", "cp /tmp/ansible_key /home/jenkins/.ssh/id_ed25519 && cp /tmp/jenkins_ansible.pub /home/jenkins/.ssh/authorized_keys && chown -R jenkins:jenkins /home/jenkins/.ssh && chmod 700 /home/jenkins/.ssh && chmod 600 /home/jenkins/.ssh/id_ed25519 /home/jenkins/.ssh/authorized_keys && exec /usr/sbin/sshd -D -e"]

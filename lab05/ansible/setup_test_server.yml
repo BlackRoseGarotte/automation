@@ -1,0 +1,81 @@
+- name: Configure PHP test server
+  hosts: test_servers
+  become: true
+
+  tasks:
+    - name: Update APT package cache
+      ansible.builtin.apt:
+        update_cache: true
+
+    - name: Install Apache2 and PHP
+      ansible.builtin.apt:
+        name:
+          - apache2
+          - php
+          - libapache2-mod-php
+          - php-cli
+          - php-sqlite3
+        state: present
+
+    - name: Create application directory
+      ansible.builtin.file:
+        path: /var/www/php-app
+        state: directory
+        owner: www-data
+        group: www-data
+        mode: "0755"
+
+    - name: Configure Apache VirtualHost
+      ansible.builtin.copy:
+        dest: /etc/apache2/sites-available/php-app.conf
+        content: |
+          <VirtualHost *:80>
+              ServerName localhost
+              DocumentRoot /var/www/php-app
+
+              <Directory /var/www/php-app>
+                  AllowOverride All
+                  Require all granted
+              </Directory>
+
+              ErrorLog ${APACHE_LOG_DIR}/php-app-error.log
+              CustomLog ${APACHE_LOG_DIR}/php-app-access.log combined
+          </VirtualHost>
+        mode: "0644"
+      notify: Restart Apache
+
+    - name: Disable default Apache site
+      ansible.builtin.command:
+        cmd: a2dissite 000-default.conf
+        creates: /etc/apache2/sites-enabled/php-app.conf
+
+    - name: Enable PHP application site
+      ansible.builtin.command:
+        cmd: a2ensite php-app.conf
+        creates: /etc/apache2/sites-enabled/php-app.conf
+      notify: Restart Apache
+
+    - name: Configure global Apache ServerName
+      ansible.builtin.copy:
+        dest: /etc/apache2/conf-available/servername.conf
+        content: "ServerName localhost\n"
+        mode: "0644"
+      notify: Restart Apache
+
+    - name: Enable global ServerName configuration
+      ansible.builtin.command:
+        cmd: a2enconf servername
+        creates: /etc/apache2/conf-enabled/servername.conf
+      notify: Restart Apache
+
+    - name: Start Apache
+      ansible.builtin.service:
+        name: apache2
+        state: started
+        enabled: true
+
+  handlers:
+    - name: Restart Apache
+      ansible.builtin.service:
+        name: apache2
+        state: restarted
