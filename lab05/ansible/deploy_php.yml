@@ -1,0 +1,56 @@
+- name: Deploy PHP application
+  hosts: test_servers
+  become: true
+
+  tasks:
+    - name: Install SQLite
+      ansible.builtin.apt:
+        name: sqlite3
+        state: present
+
+    - name: Create application directory
+      ansible.builtin.file:
+        path: /var/www/php-app
+        state: directory
+        owner: www-data
+        group: www-data
+        mode: "0755"
+
+    - name: Copy PHP project files
+      ansible.builtin.copy:
+        src: ../site/
+        dest: /var/www/php-app/
+        owner: www-data
+        group: www-data
+        mode: "u=rwX,g=rX,o=rX"
+
+    - name: Create database directory
+      ansible.builtin.file:
+        path: /var/www/db
+        state: directory
+        owner: www-data
+        group: www-data
+        mode: "0750"
+
+    - name: Copy database schema
+      ansible.builtin.copy:
+        src: ../sql/schema.sql
+        dest: /tmp/schema.sql
+        mode: "0644"
+
+    - name: Initialize SQLite database
+      ansible.builtin.shell:
+        cmd: sqlite3 /var/www/db/db.sqlite < /tmp/schema.sql
+        creates: /var/www/db/db.sqlite
+
+    - name: Configure database permissions
+      ansible.builtin.file:
+        path: /var/www/db/db.sqlite
+        owner: www-data
+        group: www-data
+        mode: "0660"
+
+    - name: Restart Apache
+      ansible.builtin.service:
+        name: apache2
+        state: restarted
